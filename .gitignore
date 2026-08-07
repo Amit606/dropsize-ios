@@ -1,0 +1,25 @@
+# Xcode
+# =========================
+build/
+DerivedData/
+*.moved-aside
+*.xcuserstate
+*.xcworkspace
+!default.xcworkspace
+xcuserdata/
+
+# XcodeGen
+# =========================
+# Since the xcodeproj is fully generated from project.yml, we ignore it.
+*.xcodeproj
+
+# System Files
+# =========================
+.DS_Store
+*.swp
+*~
+
+# Logs and temporary files
+# =========================
+*.log
+build.log

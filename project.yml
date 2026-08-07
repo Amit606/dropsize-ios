@@ -1,0 +1,70 @@
+name: Dropsize
+options:
+  bundleIdPrefix: com.kwh
+targets:
+  Dropsize:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Dropsize
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.kwh.dropsize
+      TARGETED_DEVICE_FAMILY: "1,2" # iPhone and iPad
+    dependencies:
+      - target: DropsizeShare
+      - target: DropsizeWidget
+    entitlements:
+      path: Dropsize/Dropsize.entitlements
+    info:
+      path: Dropsize/Info.plist
+      properties:
+        CFBundleDisplayName: "Dropsize"
+        UILaunchScreen: {}
+        NSPhotoLibraryUsageDescription: "Dropsize needs access to your photo library to compress photos and videos."
+        NSPhotoLibraryAddUsageDescription: "Dropsize needs access to your photo library to save compressed photos and videos."
+
+  DropsizeShare:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: DropsizeShare
+      - path: Dropsize/Services/PhotoCompressor.swift
+      - path: Dropsize/Services/VideoCompressor.swift
+      - path: Dropsize/Services/UserDefaultsManager.swift
+      - path: Dropsize/Services/HistoryManager.swift
+      - path: Dropsize/Views/Theme.swift
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.kwh.dropsize.Share
+      TARGETED_DEVICE_FAMILY: "1,2"
+    entitlements:
+      path: DropsizeShare/DropsizeShare.entitlements
+    info:
+      path: DropsizeShare/Info.plist
+      properties:
+        CFBundleDisplayName: "Compress with Dropsize"
+        NSExtension:
+          NSExtensionAttributes:
+            NSExtensionActivationRule: "SUBQUERY (extensionItems, $item, SUBQUERY ($item.attachments, $attachment, ANY $attachment.registeredTypeIdentifiers SUBTYPEDECLYES TO 'public.image' OR ANY $attachment.registeredTypeIdentifiers SUBTYPEDECLYES TO 'public.movie').@count > 0).@count > 0"
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).ShareViewController"
+
+  DropsizeWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: DropsizeWidget
+      - path: Dropsize/Services/UserDefaultsManager.swift
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.kwh.dropsize.Widget
+      TARGETED_DEVICE_FAMILY: "1,2"
+    entitlements:
+      path: DropsizeWidget/DropsizeWidget.entitlements
+    info:
+      path: DropsizeWidget/Info.plist
+      properties:
+        CFBundleDisplayName: "Dropsize Widget"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
