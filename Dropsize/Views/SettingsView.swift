@@ -188,7 +188,7 @@ struct SettingsView: View {
                                 .padding(.horizontal)
                             
                             GlassmorphicContainer {
-                                Link(destination: URL(string: "https://kwh.com/dropsize/privacy")!) {
+                                Link(destination: URL(string: "https://amit606.github.io/dropsize-ios/privacy.html")!) {
                                     HStack {
                                         Text("Privacy Policy")
                                             .foregroundColor(Theme.primaryText)
@@ -202,7 +202,7 @@ struct SettingsView: View {
                                     .background(Color.white.opacity(0.1))
                                     .padding(.vertical, 4)
                                 
-                                Link(destination: URL(string: "https://kwh.com/dropsize/terms")!) {
+                                Link(destination: URL(string: "https://amit606.github.io/dropsize-ios/terms.html")!) {
                                     HStack {
                                         Text("Terms of Use")
                                             .foregroundColor(Theme.primaryText)
