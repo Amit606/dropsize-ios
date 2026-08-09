@@ -2,6 +2,7 @@ import StoreKit
 import Observation
 
 @Observable
+@MainActor
 public final class StoreManager {
     public static let shared = StoreManager()
     
@@ -13,10 +14,23 @@ public final class StoreManager {
         "com.kwh.dropsize.yearly"
     ]
     
-    private var transactionListenerTask: Task<Void, Never>? = nil
+    private let transactionListenerTask: Task<Void, Never>
     
     private init() {
-        transactionListenerTask = listenForTransactions()
+        // Assign the task before calling other async methods in task group
+        let listener = Task.detached(priority: .background) {
+            for await result in Transaction.updates {
+                do {
+                    // Access checkVerified via static or nonisolated method
+                    let transaction = try StoreManager.checkVerified(result)
+                    await StoreManager.shared.updatePurchaseStatus()
+                    await transaction.finish()
+                } catch {
+                    print("StoreKit: Background transaction error: \(error)")
+                }
+            }
+        }
+        self.transactionListenerTask = listener
         
         Task {
             await requestProducts()
@@ -25,7 +39,7 @@ public final class StoreManager {
     }
     
     deinit {
-        transactionListenerTask?.cancel()
+        transactionListenerTask.cancel()
     }
     
     public func requestProducts() async {
@@ -42,7 +56,7 @@ public final class StoreManager {
         
         switch result {
         case .success(let verification):
-            let transaction = try checkVerified(verification)
+            let transaction = try Self.checkVerified(verification)
             await updatePurchaseStatus()
             await transaction.finish()
             return transaction
@@ -69,7 +83,7 @@ public final class StoreManager {
         
         for await result in Transaction.currentEntitlements {
             do {
-                let transaction = try checkVerified(result)
+                let transaction = try Self.checkVerified(result)
                 if transaction.revocationDate == nil {
                     purchased.insert(transaction.productID)
                 }
@@ -82,26 +96,12 @@ public final class StoreManager {
         UserDefaultsManager.shared.isPremium = !purchased.isEmpty
     }
     
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+    private nonisolated static func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified(_, let error):
             throw error
         case .verified(let safe):
             return safe
-        }
-    }
-    
-    private func listenForTransactions() -> Task<Void, Never> {
-        Task.detached(priority: .background) { [weak self] in
-            for await result in Transaction.updates {
-                do {
-                    let transaction = try self?.checkVerified(result)
-                    await self?.updatePurchaseStatus()
-                    await transaction?.finish()
-                } catch {
-                    print("StoreKit: Background transaction error: \(error)")
-                }
-            }
         }
     }
 }

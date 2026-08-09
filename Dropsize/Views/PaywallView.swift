@@ -92,8 +92,8 @@ struct PaywallView: View {
                                                 .fontWeight(.black)
                                                 .foregroundColor(.white)
                                             
-                                            if product.id.contains("yearly") {
-                                                Text("7 Days Free")
+                                            if let trialDesc = product.freeTrialPeriodDescription {
+                                                Text(trialDesc)
                                                     .font(.caption2)
                                                     .fontWeight(.bold)
                                                     .foregroundColor(.green)
@@ -238,3 +238,29 @@ struct FeatureRow: View {
         }
     }
 }
+
+extension Product {
+    var freeTrialPeriodDescription: String? {
+        guard let subscription = self.subscription,
+              let intro = subscription.introductoryOffer,
+              intro.paymentMode == .freeTrial else {
+            return nil
+        }
+        let value = intro.period.value
+        let unitString: String
+        switch intro.period.unit {
+        case .day:
+            unitString = value == 1 ? "Day" : "Days"
+        case .week:
+            unitString = value == 1 ? "Week" : "Weeks"
+        case .month:
+            unitString = value == 1 ? "Month" : "Months"
+        case .year:
+            unitString = value == 1 ? "Year" : "Years"
+        @unknown default:
+            unitString = "Day"
+        }
+        return "\(value) \(unitString) Free"
+    }
+}
+

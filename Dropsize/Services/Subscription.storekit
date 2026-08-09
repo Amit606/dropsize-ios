@@ -45,7 +45,12 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "C7E9C7E9",
-          "introductoryOffer" : null,
+          "introductoryOffer" : {
+            "internalID" : "A1B2C3D4",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P2D"
+          },
           "localizations" : [
             {
               "description" : "Unlimited photo & video compressions weekly",

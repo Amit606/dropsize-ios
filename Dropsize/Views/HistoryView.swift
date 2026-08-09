@@ -67,57 +67,22 @@ struct HistoryView: View {
                     }
                     .frame(maxHeight: .infinity)
                 } else {
-                    List {
-                        ForEach(historyManager.entries) { entry in
-                            Button(action: { selectedEntry = entry }) {
-                                HStack(spacing: 16) {
-                                    Image(systemName: entry.isMovie ? "video.circle.fill" : "photo.circle.fill")
-                                        .font(.title)
-                                        .foregroundColor(Theme.accent)
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(entry.fileName)
-                                            .font(.subheadline)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(Theme.primaryText)
-                                            .lineLimit(1)
-                                        
-                                        HStack {
-                                            Text(formatSize(entry.originalSize))
-                                                .font(.caption2)
-                                                .foregroundColor(Theme.secondaryText)
-                                                .strikethrough()
-                                            Image(systemName: "arrow.right")
-                                                .font(.system(size: 8))
-                                                .foregroundColor(Theme.secondaryText)
-                                            Text(formatSize(entry.compressedSize))
-                                                .font(.caption2)
-                                                .foregroundColor(.green)
-                                                .fontWeight(.bold)
-                                        }
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(historyManager.entries) { entry in
+                                HistoryRowView(entry: entry) {
+                                    if let idx = historyManager.entries.firstIndex(of: entry) {
+                                        historyManager.deleteEntry(at: IndexSet(integer: idx))
                                     }
-                                    
-                                    Spacer()
-                                    
-                                    let pct = entry.originalSize > 0 ? Double(entry.originalSize - entry.compressedSize) / Double(entry.originalSize) * 100 : 0
-                                    Text(String(format: "-%.0f%%", pct))
-                                        .font(.caption)
-                                        .fontWeight(.black)
-                                        .foregroundColor(.green)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.green.opacity(0.1))
-                                        .cornerRadius(6)
+                                }
+                                .onTapGesture {
+                                    selectedEntry = entry
                                 }
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            .listRowBackground(Theme.cardBg)
                         }
-                        .onDelete(perform: deleteHistoryItem)
+                        .padding(.horizontal)
+                        .padding(.bottom, 24)
                     }
-                    .listStyle(PlainListStyle())
-                    .background(Color.clear)
-                    .scrollContentBackground(.hidden)
                     .frame(maxHeight: .infinity)
                 }
             }
@@ -134,10 +99,6 @@ struct HistoryView: View {
         .onAppear {
             historyManager.loadHistory()
         }
-    }
-    
-    private func deleteHistoryItem(at offsets: IndexSet) {
-        historyManager.deleteEntry(at: offsets)
     }
     
     private func formatSize(_ bytes: Int64) -> String {
@@ -270,6 +231,139 @@ struct HistoryDetailView: View {
             let fullURL = containerURL.appendingPathComponent(entry.relativePath)
             if FileManager.default.fileExists(atPath: fullURL.path) {
                 self.fileURL = fullURL
+            }
+        }
+    }
+    
+    private func formatSize(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useKB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
+}
+
+struct HistoryRowView: View {
+    let entry: HistoryEntry
+    let onDelete: () -> Void
+    
+    @State private var thumbnail: UIImage? = nil
+    @State private var isLoaded = false
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Thumbnail
+            ZStack {
+                if let thumb = thumbnail {
+                    Image(uiImage: thumb)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 54, height: 54)
+                        .cornerRadius(10)
+                        .clipped()
+                } else {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white.opacity(0.05))
+                        .frame(width: 54, height: 54)
+                    
+                    Image(systemName: entry.isMovie ? "video.fill" : "photo.fill")
+                        .foregroundColor(Theme.secondaryText.opacity(0.5))
+                        .font(.system(size: 18))
+                }
+            }
+            .frame(width: 54, height: 54)
+            
+            // Details
+            VStack(alignment: .leading, spacing: 6) {
+                Text(entry.fileName)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.primaryText)
+                    .lineLimit(1)
+                
+                HStack(spacing: 6) {
+                    Text(formatSize(entry.originalSize))
+                        .font(.caption2)
+                        .foregroundColor(Theme.secondaryText)
+                        .strikethrough()
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 8))
+                        .foregroundColor(Theme.secondaryText)
+                    Text(formatSize(entry.compressedSize))
+                        .font(.caption2)
+                        .foregroundColor(.green)
+                        .fontWeight(.bold)
+                }
+            }
+            
+            Spacer()
+            
+            // Savings badge & Delete button
+            HStack(spacing: 12) {
+                let pct = entry.originalSize > 0 ? Double(entry.originalSize - entry.compressedSize) / Double(entry.originalSize) * 100 : 0
+                Text(String(format: "-%.0f%%", pct))
+                    .font(.caption2)
+                    .fontWeight(.black)
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.12))
+                    .cornerRadius(6)
+                
+                Button(action: onDelete) {
+                    Image(systemName: "trash.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.red.opacity(0.7))
+                        .padding(8)
+                        .background(Color.red.opacity(0.1))
+                        .clipShape(Circle())
+                }
+            }
+        }
+        .padding(.all, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.02))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+        )
+        .contentShape(Rectangle()) // Ensures tap gesture works across entire card
+        .task {
+            guard !isLoaded else { return }
+            loadThumbnail()
+            isLoaded = true
+        }
+    }
+    
+    private func loadThumbnail() {
+        let groupSuiteName = "group.com.kwh.dropsize"
+        guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupSuiteName) else {
+            return
+        }
+        let fullURL = container.appendingPathComponent(entry.relativePath)
+        guard FileManager.default.fileExists(atPath: fullURL.path) else {
+            return
+        }
+        
+        if entry.isMovie {
+            // Generate video thumbnail asynchronously
+            let asset = AVAsset(url: fullURL)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: .zero)]) { _, image, _, _, _ in
+                if let cgImage = image {
+                    let uiImg = UIImage(cgImage: cgImage)
+                    DispatchQueue.main.async {
+                        self.thumbnail = uiImg
+                    }
+                }
+            }
+        } else {
+            // Load photo thumbnail
+            if let uiImage = UIImage(contentsOfFile: fullURL.path) {
+                self.thumbnail = uiImage
             }
         }
     }

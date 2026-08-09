@@ -16,6 +16,7 @@ public struct HistoryEntry: Codable, Identifiable, Equatable {
 }
 
 @Observable
+@MainActor
 public final class HistoryManager {
     public static let shared = HistoryManager()
     

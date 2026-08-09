@@ -71,8 +71,10 @@ public final class VideoCompressor {
             ]
         ]
         
+        let preferredTransform = try await videoTrack.load(.preferredTransform)
         let writerVideoInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
         writerVideoInput.expectsMediaDataInRealTime = false
+        writerVideoInput.transform = preferredTransform
         
         // Reader Video Output
         let readerVideoOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: [
@@ -94,9 +96,11 @@ public final class VideoCompressor {
         // Audio Track setup if available
         var writerAudioInput: AVAssetWriterInput? = nil
         var readerAudioOutput: AVAssetReaderTrackOutput? = nil
-        
         if let audioTrack = audioTrack {
-            readerAudioOutput = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: nil)
+            let readerAudioSettings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatLinearPCM
+            ]
+            readerAudioOutput = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: readerAudioSettings)
             if reader.canAdd(readerAudioOutput!) {
                 reader.add(readerAudioOutput!)
             }
@@ -128,22 +132,36 @@ public final class VideoCompressor {
         writer.startSession(atSourceTime: .zero)
         
         let queue = DispatchQueue(label: "com.kwh.dropsize.video-compress-queue")
+        let session = CompressionSession(
+            writerVideoInput: writerVideoInput,
+            readerVideoOutput: readerVideoOutput,
+            writerAudioInput: writerAudioInput,
+            readerAudioOutput: readerAudioOutput,
+            reader: reader,
+            writer: writer
+        )
         
         await withCheckedContinuation { continuation in
             let group = DispatchGroup()
             
+            var isVideoFinished = false
+            var isAudioFinished = false
+            
             // Compress Video Track
             group.enter()
-            writerVideoInput.requestMediaDataWhenReady(on: queue) {
-                while writerVideoInput.isReadyForMoreMediaData {
-                    if let sampleBuffer = readerVideoOutput.copyNextSampleBuffer() {
+            session.writerVideoInput.requestMediaDataWhenReady(on: queue) {
+                if isVideoFinished { return }
+                
+                while session.writerVideoInput.isReadyForMoreMediaData {
+                    if let sampleBuffer = session.readerVideoOutput.copyNextSampleBuffer() {
                         let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
                         let progress = durationSeconds > 0 ? timestamp.seconds / durationSeconds : 0.0
                         progressHandler(min(0.99, progress))
                         
-                        writerVideoInput.append(sampleBuffer)
+                        session.writerVideoInput.append(sampleBuffer)
                     } else {
-                        writerVideoInput.markAsFinished()
+                        isVideoFinished = true
+                        session.writerVideoInput.markAsFinished()
                         group.leave()
                         break
                     }
@@ -151,14 +169,17 @@ public final class VideoCompressor {
             }
             
             // Compress Audio Track
-            if let writerAudioInput = writerAudioInput, let readerAudioOutput = readerAudioOutput {
+            if session.writerAudioInput != nil && session.readerAudioOutput != nil {
                 group.enter()
-                writerAudioInput.requestMediaDataWhenReady(on: queue) {
-                    while writerAudioInput.isReadyForMoreMediaData {
-                        if let sampleBuffer = readerAudioOutput.copyNextSampleBuffer() {
-                            writerAudioInput.append(sampleBuffer)
+                session.writerAudioInput!.requestMediaDataWhenReady(on: queue) {
+                    if isAudioFinished { return }
+                    
+                    while session.writerAudioInput!.isReadyForMoreMediaData {
+                        if let sampleBuffer = session.readerAudioOutput!.copyNextSampleBuffer() {
+                            session.writerAudioInput!.append(sampleBuffer)
                         } else {
-                            writerAudioInput.markAsFinished()
+                            isAudioFinished = true
+                            session.writerAudioInput!.markAsFinished()
                             group.leave()
                             break
                         }
@@ -168,11 +189,11 @@ public final class VideoCompressor {
             
             // Wait for tracks completion
             group.notify(queue: queue) {
-                if reader.status == .failed {
-                    writer.cancelWriting()
+                if session.reader.status == .failed {
+                    session.writer.cancelWriting()
                     continuation.resume()
                 } else {
-                    writer.finishWriting {
+                    session.writer.finishWriting {
                         progressHandler(1.0)
                         continuation.resume()
                     }
@@ -214,5 +235,30 @@ public final class VideoCompressor {
         let finalHeight = CGFloat(Int(isLandscape ? targetShortEdge : targetLongEdge) / 16 * 16)
         
         return CGSize(width: max(16, finalWidth), height: max(16, finalHeight))
+    }
+}
+
+fileprivate final class CompressionSession: @unchecked Sendable {
+    let writerVideoInput: AVAssetWriterInput
+    let readerVideoOutput: AVAssetReaderTrackOutput
+    let writerAudioInput: AVAssetWriterInput?
+    let readerAudioOutput: AVAssetReaderTrackOutput?
+    let reader: AVAssetReader
+    let writer: AVAssetWriter
+    
+    init(
+        writerVideoInput: AVAssetWriterInput,
+        readerVideoOutput: AVAssetReaderTrackOutput,
+        writerAudioInput: AVAssetWriterInput?,
+        readerAudioOutput: AVAssetReaderTrackOutput?,
+        reader: AVAssetReader,
+        writer: AVAssetWriter
+    ) {
+        self.writerVideoInput = writerVideoInput
+        self.readerVideoOutput = readerVideoOutput
+        self.writerAudioInput = writerAudioInput
+        self.readerAudioOutput = readerAudioOutput
+        self.reader = reader
+        self.writer = writer
     }
 }

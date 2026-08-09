@@ -77,3 +77,13 @@ targets:
         CFBundleDisplayName: "Dropsize Widget"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+schemes:
+  Dropsize:
+    build:
+      targets:
+        Dropsize: all
+    run:
+      config: Debug
+      storeKitConfiguration: Dropsize/Services/Subscription.storekit
+

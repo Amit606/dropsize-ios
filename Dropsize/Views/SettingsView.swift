@@ -32,7 +32,7 @@ struct SettingsView: View {
                                         Text("Dropsize Premium Active")
                                             .font(.headline)
                                             .foregroundColor(Theme.primaryText)
-                                        Text("You have unlimited compression access!")
+                                        Text("Active Plan: \(activePlanName)")
                                             .font(.subheadline)
                                             .foregroundColor(Theme.secondaryText)
                                     }
@@ -261,6 +261,16 @@ struct SettingsView: View {
                 alertMessage = "Failed to restore: \(error.localizedDescription)"
                 showAlert = true
             }
+        }
+    }
+    
+    private var activePlanName: String {
+        if storeManager.purchasedProductIDs.contains("com.kwh.dropsize.yearly") {
+            return "Yearly Subscription"
+        } else if storeManager.purchasedProductIDs.contains("com.kwh.dropsize.weekly") {
+            return "Weekly Subscription"
+        } else {
+            return "Unlimited Access"
         }
     }
 }

@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 
 struct MainCompressView: View {
     @State private var storeManager = StoreManager.shared
@@ -15,6 +16,7 @@ struct MainCompressView: View {
     // Compression parameters
     @State private var targetSizeMB: Double = 1.0
     @State private var isCompressing = false
+    @State private var isImporting = false
     @State private var compressionProgress: Double = 0.0
     
     // Navigation / Results
@@ -55,40 +57,36 @@ struct MainCompressView: View {
                 
                 // Select Media Area or Preview Card
                 if localOriginalURL == nil {
-                    Button(action: {
-                        // Triggers the PhotosPicker selection
-                    }) {
-                        PhotosPicker(
-                            selection: $selectedPickerItem,
-                            matching: .any(of: [.images, .videos])
-                        ) {
-                            VStack(spacing: 16) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Theme.accent.opacity(0.15))
-                                        .frame(width: 80, height: 80)
-                                    Image(systemName: "photo.badge.plus")
-                                        .font(.largeTitle)
-                                        .foregroundColor(Theme.accent)
-                                }
-                                
-                                Text("Select Photo or Video")
-                                    .font(.headline)
-                                    .foregroundColor(Theme.primaryText)
-                                Text("Compress to your exact target file size")
-                                    .font(.subheadline)
-                                    .foregroundColor(Theme.secondaryText)
+                    PhotosPicker(
+                        selection: $selectedPickerItem,
+                        matching: .any(of: [.images, .videos])
+                    ) {
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(Theme.accent.opacity(0.15))
+                                    .frame(width: 80, height: 80)
+                                Image(systemName: "photo.badge.plus")
+                                    .font(.largeTitle)
+                                    .foregroundColor(Theme.accent)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 60)
-                            .background(Color.white.opacity(0.02))
-                            .cornerRadius(20)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6]))
-                                    .foregroundColor(Color.white.opacity(0.15))
-                            )
+                            
+                            Text("Select Photo or Video")
+                                .font(.headline)
+                                .foregroundColor(Theme.primaryText)
+                            Text("Compress to your exact target file size")
+                                .font(.subheadline)
+                                .foregroundColor(Theme.secondaryText)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 60)
+                        .background(Color.white.opacity(0.02))
+                        .cornerRadius(20)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6]))
+                                .foregroundColor(Color.white.opacity(0.15))
+                        )
                     }
                     .padding(.horizontal)
                 } else {
@@ -173,31 +171,82 @@ struct MainCompressView: View {
                 // Compression Action
                 if localOriginalURL != nil {
                     VStack(spacing: 16) {
-                        if isCompressing {
-                            VStack(spacing: 8) {
-                                ProgressView(value: compressionProgress)
-                                    .tint(Theme.accent)
-                                Text(String(format: "Compressing... %.0f%%", compressionProgress * 100))
-                                    .font(.caption)
-                                    .foregroundColor(Theme.secondaryText)
-                            }
-                            .padding(.horizontal, 24)
-                        } else {
-                            if let error = errorMessage {
-                                Text(error)
-                                    .font(.footnote)
-                                    .foregroundColor(.red)
-                                    .padding(.horizontal)
-                            }
-                            
-                            PremiumButton(title: "Compress Media", icon: "arrow.down.right.and.arrow.up.left") {
-                                performCompression()
-                            }
-                            .padding(.horizontal)
+                        if let error = errorMessage {
+                            Text(error)
+                                .font(.footnote)
+                                .foregroundColor(.red)
+                                .padding(.horizontal)
                         }
+                        
+                        PremiumButton(title: isMovie ? "Compress Video" : "Compress Photo", icon: "arrow.down.right.and.arrow.up.left") {
+                            performCompression()
+                        }
+                        .padding(.horizontal)
                     }
                     .padding(.bottom, 24)
                 }
+            }
+            
+            // Glassmorphic Modal Progress Overlay Dialog
+            if isImporting || isCompressing {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                
+                GlassmorphicContainer {
+                    VStack(spacing: 20) {
+                        if isImporting {
+                            ProgressView()
+                                .tint(Theme.accent)
+                                .scaleEffect(1.5)
+                                .padding(.vertical, 8)
+                            
+                            Text("Loading Media...")
+                                .font(.headline)
+                                .foregroundColor(Theme.primaryText)
+                            
+                            Text("Importing selected file from your photo library. Please wait.")
+                                .font(.caption)
+                                .foregroundColor(Theme.secondaryText)
+                                .multilineTextAlignment(.center)
+                                .frame(width: 220)
+                        } else if isCompressing {
+                            VStack(spacing: 16) {
+                                if isMovie {
+                                    CircularProgressView(progress: compressionProgress)
+                                        .frame(width: 72, height: 72)
+                                        .padding(.vertical, 4)
+                                    
+                                    Text("Compressing Video...")
+                                        .font(.headline)
+                                        .foregroundColor(Theme.primaryText)
+                                    
+                                    Text(String(format: "%.0f%%", compressionProgress * 100))
+                                        .font(.title3)
+                                        .fontWeight(.black)
+                                        .foregroundColor(Theme.accent)
+                                } else {
+                                    ProgressView()
+                                        .tint(Theme.accent)
+                                        .scaleEffect(1.5)
+                                        .padding(.vertical, 8)
+                                    
+                                    Text("Compressing Photo...")
+                                        .font(.headline)
+                                        .foregroundColor(Theme.primaryText)
+                                    
+                                    Text("Optimizing image and metadata...")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.secondaryText)
+                                }
+                            }
+                            .frame(width: 220)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                .frame(width: 280)
+                .transition(.scale.combined(with: .opacity))
             }
         }
         .onChange(of: selectedPickerItem) { _, _ in
@@ -216,8 +265,10 @@ struct MainCompressView: View {
     private func loadSelectedMedia() {
         guard let item = selectedPickerItem else { return }
         
-        isMovie = item.supportedContentTypes.contains(.movie)
+        isMovie = item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) || $0.conforms(to: .video) })
         let tempDir = FileManager.default.temporaryDirectory
+        isImporting = true
+        errorMessage = nil
         
         Task {
             do {
@@ -238,6 +289,11 @@ struct MainCompressView: View {
                             if let cg = cgImage {
                                 self.thumbnail = UIImage(cgImage: cg)
                             }
+                            self.isImporting = false
+                        }
+                    } else {
+                        await MainActor.run {
+                            self.isImporting = false
                         }
                     }
                 } else {
@@ -249,12 +305,18 @@ struct MainCompressView: View {
                             self.localOriginalURL = destURL
                             self.originalSize = Int64(data.count)
                             self.thumbnail = UIImage(data: data)
+                            self.isImporting = false
+                        }
+                    } else {
+                        await MainActor.run {
+                            self.isImporting = false
                         }
                     }
                 }
             } catch {
                 await MainActor.run {
                     self.errorMessage = "Failed to load media: \(error.localizedDescription)"
+                    self.isImporting = false
                 }
             }
         }
@@ -393,3 +455,29 @@ struct PresetButton: View {
         }
     }
 }
+
+struct CircularProgressView: View {
+    let progress: Double
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(
+                    Theme.accent.opacity(0.15),
+                    lineWidth: 6
+                )
+            Circle()
+                .trim(from: 0, to: CGFloat(min(max(progress, 0), 1)))
+                .stroke(
+                    Theme.primaryGradient,
+                    style: StrokeStyle(
+                        lineWidth: 6,
+                        lineCap: .round
+                    )
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.easeOut, value: progress)
+        }
+    }
+}
+

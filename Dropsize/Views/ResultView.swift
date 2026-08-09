@@ -27,7 +27,7 @@ struct ResultView: View {
                     Text("Result")
                         .font(.title)
                         .fontWeight(.black)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.primaryText)
                     
                     let percentage = originalSize > 0 ? Double(originalSize - compressedSize) / Double(originalSize) * 100 : 0
                     Text(String(format: "Saved %.0f%%", percentage))
@@ -61,7 +61,7 @@ struct ResultView: View {
                                 .shadow(radius: 8)
                         } else {
                             ProgressView()
-                                .tint(.white)
+                                .tint(Theme.accent)
                                 .frame(height: 300)
                         }
                     }
@@ -78,7 +78,7 @@ struct ResultView: View {
                             Text(formatSize(originalSize))
                                 .font(.title3)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                .foregroundColor(Theme.primaryText)
                         }
                         
                         Spacer()
@@ -106,7 +106,7 @@ struct ResultView: View {
                 
                 // Actions
                 VStack(spacing: 12) {
-                    PremiumButton(title: "Save to Photos", icon: "square.and.arrow.down") {
+                    PremiumButton(title: isMovie ? "Save Video to Photos" : "Save Photo to Photos", icon: "square.and.arrow.down") {
                         saveToLibrary()
                     }
                     .padding(.horizontal)
@@ -117,14 +117,18 @@ struct ResultView: View {
                     }) {
                         HStack {
                             Image(systemName: "square.and.arrow.up")
-                            Text("Share File...")
+                            Text(isMovie ? "Share Video..." : "Share Photo...")
                         }
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.primaryText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.white.opacity(0.05))
+                        .background(Theme.cardBg)
                         .cornerRadius(14)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
                     }
                     .padding(.horizontal)
                     

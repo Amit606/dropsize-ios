@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 
 struct BatchItem: Identifiable {
     let id = UUID()
@@ -245,7 +246,7 @@ struct BatchCompressView: View {
         
         for pickerItem in selectedPickerItems {
             let name = pickerItem.itemIdentifier ?? UUID().uuidString
-            let isMovie = pickerItem.supportedContentTypes.contains(.movie)
+            let isMovie = pickerItem.supportedContentTypes.contains(where: { $0.conforms(to: .movie) || $0.conforms(to: .video) })
             
             Task {
                 do {
