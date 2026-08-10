@@ -11,6 +11,7 @@ public final class UserDefaultsManager {
     private let lastResetDateKey = "dropsize_last_reset_date"
     private let stripMetadataKey = "dropsize_strip_metadata"
     private let lastCompressedPhotoPathKey = "dropsize_last_compressed_photo_path"
+    private let hasRequestedReviewKey = "dropsize_has_requested_review"
     
     private init() {
         self.userDefaults = UserDefaults(suiteName: groupSuiteName)
@@ -40,6 +41,15 @@ public final class UserDefaultsManager {
         }
         set {
             userDefaults?.set(newValue, forKey: lastCompressedPhotoPathKey)
+        }
+    }
+    
+    public var hasRequestedReview: Bool {
+        get {
+            userDefaults?.bool(forKey: hasRequestedReviewKey) ?? false
+        }
+        set {
+            userDefaults?.set(newValue, forKey: hasRequestedReviewKey)
         }
     }
     

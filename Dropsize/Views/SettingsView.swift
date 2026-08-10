@@ -167,16 +167,37 @@ struct SettingsView: View {
                                 .padding(.horizontal)
                             
                             GlassmorphicContainer {
-                                HStack {
-                                    Text("Restore Purchases")
-                                        .foregroundColor(Theme.primaryText)
-                                    Spacer()
-                                    Image(systemName: "arrow.clockwise")
-                                        .foregroundColor(Theme.accent)
-                                }
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    restorePurchases()
+                                VStack(spacing: 12) {
+                                    HStack {
+                                        Text("Restore Purchases")
+                                            .foregroundColor(Theme.primaryText)
+                                        Spacer()
+                                        Image(systemName: "arrow.clockwise")
+                                            .foregroundColor(Theme.accent)
+                                    }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        restorePurchases()
+                                    }
+                                    
+                                    Divider()
+                                        .background(Color.white.opacity(0.1))
+                                    
+                                    HStack {
+                                        Text("Rate the App")
+                                            .foregroundColor(Theme.primaryText)
+                                        Spacer()
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(.yellow)
+                                    }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        // TODO: Replace 'YOUR_APP_ID' with actual App Store ID once created in App Store Connect
+                                        let appID = "YOUR_APP_ID"
+                                        if let url = URL(string: "itms-apps://itunes.apple.com/app/id\(appID)?action=write-review") {
+                                            UIApplication.shared.open(url)
+                                        }
+                                    }
                                 }
                             }
                             .padding(.horizontal)

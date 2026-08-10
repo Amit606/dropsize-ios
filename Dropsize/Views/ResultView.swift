@@ -187,8 +187,11 @@ struct ResultView: View {
                 alertMessage = "Successfully saved to your Photos library!"
                 showAlert = true
                 
-                // Prompt user for App Store review at the moment of peak satisfaction
-                requestReview()
+                // Prompt user for App Store review once only, at the moment of peak satisfaction
+                if !UserDefaultsManager.shared.hasRequestedReview {
+                    UserDefaultsManager.shared.hasRequestedReview = true
+                    requestReview()
+                }
             } catch {
                 alertMessage = "Failed to save: \(error.localizedDescription)"
                 showAlert = true
