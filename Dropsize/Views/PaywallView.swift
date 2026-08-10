@@ -112,6 +112,7 @@ struct PaywallView: View {
                             ForEach(storeManager.products, id: \.id) { product in
                                 let isSelected = selectedProduct?.id == product.id
                                 let isYearly = product.id.contains("yearly")
+                                let isOwned = storeManager.purchasedProductIDs.contains(product.id)
                                 HStack(spacing: 16) {
                                     // Visual Selection Indicator
                                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -125,7 +126,15 @@ struct PaywallView: View {
                                                 .fontWeight(.bold)
                                                 .foregroundColor(.white)
                                             
-                                            if isYearly {
+                                            if isOwned {
+                                                Text("ACTIVE")
+                                                    .font(.system(size: 9, weight: .black))
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.green)
+                                                    .cornerRadius(4)
+                                            } else if isYearly {
                                                 Text("BEST VALUE")
                                                     .font(.system(size: 9, weight: .black))
                                                     .foregroundColor(.white)
@@ -201,7 +210,7 @@ struct PaywallView: View {
                                 handlePurchase()
                             }
                         )
-                        .disabled(selectedProduct == nil || isPurchasing)
+                        .disabled(selectedProduct == nil || isPurchasing || storeManager.purchasedProductIDs.contains(selectedProduct?.id ?? ""))
                         .padding(.horizontal)
                         
                         Button("Restore Purchases") {
@@ -240,6 +249,10 @@ struct PaywallView: View {
         }
         guard let product = selectedProduct else {
             return "Choose a Plan"
+        }
+        
+        if storeManager.purchasedProductIDs.contains(product.id) {
+            return "Already Subscribed to this Plan"
         }
         
         let billingPeriod = product.id.contains("yearly") ? "Year" : "Week"
