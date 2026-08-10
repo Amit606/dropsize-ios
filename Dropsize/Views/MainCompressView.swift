@@ -144,6 +144,22 @@ struct MainCompressView: View {
                         }
                         .padding(.horizontal)
                         
+                        // Preset explanatory card
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "info.circle.fill")
+                                .foregroundColor(Theme.accent)
+                                .font(.footnote)
+                                .padding(.top, 1)
+                            
+                            Text(presetExplanationText)
+                                .font(.caption)
+                                .foregroundColor(Theme.secondaryText)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        
                         // Custom slider
                         GlassmorphicContainer {
                             VStack(alignment: .leading, spacing: 12) {
@@ -259,6 +275,19 @@ struct MainCompressView: View {
             if let orig = localOriginalURL, let comp = localCompressedURL {
                 ResultView(originalURL: orig, compressedURL: comp, isMovie: isMovie)
             }
+        }
+    }
+    
+    private var presetExplanationText: String {
+        switch targetSizeMB {
+        case 1.0:
+            return "Email Preset: Fits strict email attachments limits (like Gmail or Outlook 25MB total caps, optimized to 1MB to attach multiple files easily)."
+        case 2.0:
+            return "Messages Preset: Ideal for MMS, iMessage, and WhatsApp sharing—ensures fast uploads and lower data consumption."
+        case 5.0:
+            return "Web Preset: Optimized for uploading to websites, blogs, and social platforms while keeping premium visual quality."
+        default:
+            return "Custom Preset: Use the slider to set a custom target file size based on your specific sharing requirement."
         }
     }
     
