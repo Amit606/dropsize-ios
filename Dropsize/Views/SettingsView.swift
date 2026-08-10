@@ -44,25 +44,26 @@ struct SettingsView: View {
                             }
                             .padding(.horizontal)
                         } else {
-                            Button(action: { showPaywall = true }) {
-                                GlassmorphicContainer {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Upgrade to Premium")
-                                                .font(.headline)
-                                                .foregroundColor(Theme.primaryText)
-                                            Text("Get unlimited batch modes & widget features.")
-                                                .font(.subheadline)
-                                                .foregroundColor(Theme.secondaryText)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
+                            GlassmorphicContainer {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Upgrade to Premium")
                                             .font(.headline)
-                                            .foregroundColor(Theme.accent)
+                                            .foregroundColor(Theme.primaryText)
+                                        Text("Get unlimited batch modes & widget features.")
+                                            .font(.subheadline)
+                                            .foregroundColor(Theme.secondaryText)
                                     }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.headline)
+                                        .foregroundColor(Theme.accent)
                                 }
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                showPaywall = true
+                            }
                             .padding(.horizontal)
                         }
                         
@@ -112,26 +113,25 @@ struct SettingsView: View {
                                         .background(Color.white.opacity(0.1))
                                     
                                     // Language Row
-                                    Button(action: {
+                                    HStack {
+                                        Text("App Language")
+                                            .font(.headline)
+                                            .foregroundColor(Theme.primaryText)
+                                        Spacer()
+                                        let currentLangCode = Locale.current.language.languageCode?.identifier ?? "en"
+                                        let currentLangName = Locale.current.localizedString(forLanguageCode: currentLangCode) ?? "English"
+                                        Text(currentLangName)
+                                            .font(.subheadline)
+                                            .foregroundColor(Theme.secondaryText)
+                                        Image(systemName: "arrow.up.forward.square")
+                                            .foregroundColor(Theme.secondaryText)
+                                    }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
                                         if let url = URL(string: UIApplication.openSettingsURLString) {
                                             UIApplication.shared.open(url)
                                         }
-                                    }) {
-                                        HStack {
-                                            Text("App Language")
-                                                .font(.headline)
-                                                .foregroundColor(Theme.primaryText)
-                                            Spacer()
-                                            let currentLangCode = Locale.current.language.languageCode?.identifier ?? "en"
-                                            let currentLangName = Locale.current.localizedString(forLanguageCode: currentLangCode) ?? "English"
-                                            Text(currentLangName)
-                                                .font(.subheadline)
-                                                .foregroundColor(Theme.secondaryText)
-                                            Image(systemName: "arrow.up.forward.square")
-                                                .foregroundColor(Theme.secondaryText)
-                                        }
                                     }
-                                    .buttonStyle(PlainButtonStyle())
                                 }
                             }
                             .padding(.horizontal)
@@ -167,14 +167,16 @@ struct SettingsView: View {
                                 .padding(.horizontal)
                             
                             GlassmorphicContainer {
-                                Button(action: restorePurchases) {
-                                    HStack {
-                                        Text("Restore Purchases")
-                                            .foregroundColor(Theme.primaryText)
-                                        Spacer()
-                                        Image(systemName: "arrow.clockwise")
-                                            .foregroundColor(Theme.accent)
-                                    }
+                                HStack {
+                                    Text("Restore Purchases")
+                                        .foregroundColor(Theme.primaryText)
+                                    Spacer()
+                                    Image(systemName: "arrow.clockwise")
+                                        .foregroundColor(Theme.accent)
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    restorePurchases()
                                 }
                             }
                             .padding(.horizontal)

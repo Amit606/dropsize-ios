@@ -8,6 +8,8 @@ public final class StoreManager {
     
     public var products: [Product] = []
     public var purchasedProductIDs = Set<String>()
+    public var isLoadingProducts = false
+    public var productLoadError: String?
     
     private let productIDs = [
         "com.kwh.dropsize.weekly",
@@ -43,12 +45,19 @@ public final class StoreManager {
     }
     
     public func requestProducts() async {
+        isLoadingProducts = true
+        productLoadError = nil
         do {
             let loadedProducts = try await Product.products(for: productIDs)
             self.products = loadedProducts.sorted(by: { $0.price < $1.price })
+            if loadedProducts.isEmpty {
+                productLoadError = "No products were returned. Make sure the Product IDs match App Store Connect."
+            }
         } catch {
+            self.productLoadError = error.localizedDescription
             print("StoreKit: Failed to fetch products: \(error)")
         }
+        isLoadingProducts = false
     }
     
     public func purchase(_ product: Product) async throws -> Transaction? {

@@ -64,55 +64,122 @@ struct PaywallView: View {
                     
                     // Product selection
                     VStack(spacing: 16) {
-                        if storeManager.products.isEmpty {
-                            ProgressView()
+                        if storeManager.isLoadingProducts {
+                            ProgressView("Loading plans...")
                                 .tint(.white)
+                                .foregroundColor(.white.opacity(0.6))
                                 .padding()
+                        } else if let error = storeManager.productLoadError {
+                            VStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.title)
+                                    .foregroundColor(.yellow)
+                                
+                                Text("Unable to Load Plans")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                Text(error)
+                                    .font(.footnote)
+                                    .foregroundColor(Theme.secondaryText)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                                
+                                Button(action: {
+                                    Task {
+                                        await storeManager.requestProducts()
+                                    }
+                                }) {
+                                    Text("Retry")
+                                        .font(.subheadline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 8)
+                                        .background(Theme.accent)
+                                        .cornerRadius(8)
+                                }
+                                .padding(.top, 4)
+                            }
+                            .padding()
+                            .background(Color.white.opacity(0.02))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                            )
                         } else {
                             ForEach(storeManager.products, id: \.id) { product in
                                 let isSelected = selectedProduct?.id == product.id
-                                Button(action: { selectedProduct = product }) {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
+                                let isYearly = product.id.contains("yearly")
+                                HStack(spacing: 16) {
+                                    // Visual Selection Indicator
+                                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                        .font(.title2)
+                                        .foregroundColor(isSelected ? Theme.accent : .white.opacity(0.3))
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 8) {
                                             Text(product.displayName)
                                                 .font(.headline)
                                                 .fontWeight(.bold)
                                                 .foregroundColor(.white)
-                                            Text(product.description)
-                                                .font(.subheadline)
-                                                .foregroundColor(Theme.secondaryText)
-                                                .multilineTextAlignment(.leading)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        VStack(alignment: .trailing, spacing: 4) {
-                                            Text(product.displayPrice)
-                                                .font(.title3)
-                                                .fontWeight(.black)
-                                                .foregroundColor(.white)
                                             
-                                            if let trialDesc = product.freeTrialPeriodDescription {
-                                                Text(trialDesc)
-                                                    .font(.caption2)
-                                                    .fontWeight(.bold)
-                                                    .foregroundColor(.green)
-                                                    .padding(.horizontal, 8)
+                                            if isYearly {
+                                                Text("BEST VALUE")
+                                                    .font(.system(size: 9, weight: .black))
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 6)
                                                     .padding(.vertical, 2)
-                                                    .background(Color.green.opacity(0.15))
+                                                    .background(Theme.accent)
+                                                    .cornerRadius(4)
+                                            } else {
+                                                Text("WEEKLY")
+                                                    .font(.system(size: 9, weight: .black))
+                                                    .foregroundColor(Theme.secondaryText)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.white.opacity(0.1))
                                                     .cornerRadius(4)
                                             }
                                         }
+                                        Text(product.description)
+                                            .font(.subheadline)
+                                            .foregroundColor(Theme.secondaryText)
+                                            .multilineTextAlignment(.leading)
                                     }
-                                    .padding()
-                                    .background(isSelected ? Theme.accent.opacity(0.15) : Color.white.opacity(0.03))
-                                    .cornerRadius(16)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(isSelected ? Theme.accent : Color.white.opacity(0.1), lineWidth: 2)
-                                    )
+                                    
+                                    Spacer()
+                                    
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        Text(product.displayPrice)
+                                            .font(.title3)
+                                            .fontWeight(.black)
+                                            .foregroundColor(.white)
+                                        
+                                        if let trialDesc = product.freeTrialPeriodDescription {
+                                            Text(trialDesc)
+                                                .font(.caption2)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.green)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 2)
+                                                .background(Color.green.opacity(0.15))
+                                                .cornerRadius(4)
+                                        }
+                                    }
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .padding()
+                                .background(isSelected ? Theme.accent.opacity(0.12) : Color.white.opacity(0.03))
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(isSelected ? Theme.accent : Color.white.opacity(0.1), lineWidth: 2)
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedProduct = product
+                                }
                             }
                         }
                     }
@@ -129,7 +196,7 @@ struct PaywallView: View {
                         }
                         
                         PremiumButton(
-                            title: isPurchasing ? "Purchasing..." : (selectedProduct?.id.contains("yearly") == true ? "Start 7-Day Trial" : "Subscribe Now"),
+                            title: purchaseButtonTitle,
                             action: {
                                 handlePurchase()
                             }
@@ -164,6 +231,20 @@ struct PaywallView: View {
             if selectedProduct == nil && !newProducts.isEmpty {
                 selectedProduct = newProducts.first(where: { $0.id.contains("yearly") }) ?? newProducts.first
             }
+        }
+    }
+    
+    private var purchaseButtonTitle: String {
+        if isPurchasing {
+            return "Purchasing..."
+        }
+        guard let product = selectedProduct else {
+            return "Choose a Plan"
+        }
+        if product.id.contains("yearly") {
+            return "Start 7-Day Trial • \(product.displayPrice)/Year"
+        } else {
+            return "Subscribe Weekly • \(product.displayPrice)/Week"
         }
     }
     
