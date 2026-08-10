@@ -1,9 +1,13 @@
 import SwiftUI
 
 extension View {
+    @MainActor
     public func presentShareSheet(activityItems: [Any]) {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
+        // Find the active foreground window scene and key window
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }),
+              let rootViewController = window.rootViewController else {
             return
         }
         
@@ -26,6 +30,9 @@ extension View {
             popoverController.permittedArrowDirections = []
         }
         
-        topViewController.present(activityViewController, animated: true, completion: nil)
+        // Wrap presentation in async block to let any pending SwiftUI layouts/animations finish first
+        DispatchQueue.main.async {
+            topViewController.present(activityViewController, animated: true, completion: nil)
+        }
     }
 }
