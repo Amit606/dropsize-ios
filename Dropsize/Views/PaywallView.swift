@@ -241,10 +241,13 @@ struct PaywallView: View {
         guard let product = selectedProduct else {
             return "Choose a Plan"
         }
-        if product.id.contains("yearly") {
-            return "Start 7-Day Trial • \(product.displayPrice)/Year"
+        
+        let billingPeriod = product.id.contains("yearly") ? "Year" : "Week"
+        
+        if let trialDesc = product.freeTrialPeriodDescription {
+            return "Start \(trialDesc) • \(product.displayPrice)/\(billingPeriod)"
         } else {
-            return "Subscribe Weekly • \(product.displayPrice)/Week"
+            return "Subscribe • \(product.displayPrice)/\(billingPeriod)"
         }
     }
     
@@ -328,20 +331,19 @@ extension Product {
             return nil
         }
         let value = intro.period.value
-        let unitString: String
         switch intro.period.unit {
         case .day:
-            unitString = value == 1 ? "Day" : "Days"
+            return "\(value)-Day Free Trial"
         case .week:
-            unitString = value == 1 ? "Week" : "Weeks"
+            let days = value * 7
+            return "\(days)-Day Free Trial"
         case .month:
-            unitString = value == 1 ? "Month" : "Months"
+            return value == 1 ? "1-Month Free Trial" : "\(value)-Month Free Trial"
         case .year:
-            unitString = value == 1 ? "Year" : "Years"
+            return value == 1 ? "1-Year Free Trial" : "\(value)-Year Free Trial"
         @unknown default:
-            unitString = "Day"
+            return "Free Trial"
         }
-        return "\(value) \(unitString) Free"
     }
 }
 
