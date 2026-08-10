@@ -1,8 +1,10 @@
 import SwiftUI
 import AVKit
+import StoreKit
 
 struct ResultView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.requestReview) private var requestReview
     
     let originalURL: URL
     let compressedURL: URL
@@ -184,6 +186,9 @@ struct ResultView: View {
                 }
                 alertMessage = "Successfully saved to your Photos library!"
                 showAlert = true
+                
+                // Prompt user for App Store review at the moment of peak satisfaction
+                requestReview()
             } catch {
                 alertMessage = "Failed to save: \(error.localizedDescription)"
                 showAlert = true
