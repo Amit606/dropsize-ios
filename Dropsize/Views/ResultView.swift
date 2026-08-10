@@ -112,8 +112,7 @@ struct ResultView: View {
                     .padding(.horizontal)
                     
                     Button(action: {
-                        shareItems = [compressedURL]
-                        showShareSheet = true
+                        presentShareSheet(activityItems: [compressedURL])
                     }) {
                         HStack {
                             Image(systemName: "square.and.arrow.up")
@@ -144,9 +143,6 @@ struct ResultView: View {
         }
         .onAppear {
             loadMediaSizes()
-        }
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(activityItems: shareItems)
         }
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Dropsize"), message: Text(alertMessage ?? ""), dismissButton: .default(Text("OK")))
@@ -202,18 +198,7 @@ struct ResultView: View {
         return formatter.string(fromByteCount: bytes)
     }
 }
-
-// Custom Activity View Controller wrapper
-struct ShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
+                    
 import Photos
 
 struct BeforeAfterSlider: View {

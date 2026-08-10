@@ -6,8 +6,6 @@ struct HistoryView: View {
     
     // Preview / Share State
     @State private var selectedEntry: HistoryEntry? = nil
-    @State private var showShareSheet = false
-    @State private var shareItems: [Any] = []
     
     var body: some View {
         ZStack {
@@ -89,12 +87,8 @@ struct HistoryView: View {
         }
         .sheet(item: $selectedEntry) { entry in
             HistoryDetailView(entry: entry) { fileURL in
-                self.shareItems = [fileURL]
-                self.showShareSheet = true
+                presentShareSheet(activityItems: [fileURL])
             }
-        }
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(activityItems: shareItems)
         }
         .onAppear {
             historyManager.loadHistory()

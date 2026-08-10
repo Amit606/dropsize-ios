@@ -43,9 +43,6 @@ struct BatchCompressView: View {
     @State private var isCompressing = false
     @State private var compressionCompleted = false
     
-    @State private var showShareSheet = false
-    @State private var shareItems: [URL] = []
-    
     @State private var alertMessage: String?
     @State private var showAlert = false
     
@@ -173,8 +170,8 @@ struct BatchCompressView: View {
                             .padding(.horizontal)
                             
                             Button(action: {
-                                shareItems = items.compactMap { $0.compressedURL }
-                                showShareSheet = true
+                                let urls = items.compactMap { $0.compressedURL }
+                                presentShareSheet(activityItems: urls)
                             }) {
                                 HStack {
                                     Image(systemName: "square.and.arrow.up")
@@ -221,9 +218,7 @@ struct BatchCompressView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(activityItems: shareItems)
-        }
+
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Dropsize Batch"), message: Text(alertMessage ?? ""), dismissButton: .default(Text("OK")))
         }
